@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tipo;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Redirect;
+use Intervention\Image\Facades\Image;
 
 class TiposController extends Controller
 {
@@ -51,5 +53,25 @@ class TiposController extends Controller
         $tipo->delete();
         $request->session()->flash('mensagem_sucesso', 'Tipo removido com sucesso');
         return Redirect::to('tipo');
+    }
+    public function showReport(){
+        $tipos = Tipo::get();
+        $imagem = 'uploads/tipos/semfoto.jpg';
+        $tipo = pathinfo($imagem, PATHINFO_EXTENSION);
+        $data = file_get_contents($imagem);
+        $base64 = base64_encode(($imagem));
+        $logo = 'data:image/' . $tipo . ';base64' . $base64;
+
+        $logo = base64_encode(file_get_contents(public_path('/uploads/tipos/semfoto.jpg')));
+        $pdf = Pdf::loadView('reports.tipos', compact('tipos', 'logo'));
+
+        $pdf->setPaper('a4', 'portrait')
+            ->setOptions(['dpi'=>150, 'defaultFont'=>'sans-serif'])
+            ->setEncryption('123');
+
+        return $pdf
+            //->download('relatorio.pdf');
+            //->save(public_path('/arquivos/relatorio.pdf'));
+            ->stream('relatorio.pdf');
     }
 }
